@@ -55,8 +55,8 @@ label{display:block;font-size:.7rem;color:var(--gray);margin-bottom:.2rem;letter
 .tab:hover{color:var(--white);border-color:rgba(255,255,255,.2);}
 .tab.active{background:rgba(27,58,107,.55);color:var(--white);border-color:rgba(27,58,107,.9);}
 .rank-table{width:100%;border-collapse:collapse;}
-.rank-table th{font-family:'Barlow Condensed',sans-serif;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);padding:.42rem .85rem;text-align:left;border-bottom:1px solid var(--border);}
-.rank-table td{padding:.65rem .85rem;border-bottom:1px solid rgba(255,255,255,.03);}
+.rank-table th{font-family:'Barlow Condensed',sans-serif;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);padding:.42rem .45rem;text-align:left;border-bottom:1px solid var(--border);}
+.rank-table td{padding:.6rem .45rem;border-bottom:1px solid rgba(255,255,255,.03);}
 .rank-table tr:hover td{background:rgba(255,255,255,.02);cursor:pointer;}
 .rk-pos{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gray);width:38px;}
 .rk-pos.g{color:var(--gold);}.rk-pos.s{color:#B8C4D4;}.rk-pos.b{color:#CD8B4A;}
@@ -140,7 +140,7 @@ label{display:block;font-size:.7rem;color:var(--gray);margin-bottom:.2rem;letter
     <div class="logo-divider"></div>
     <div>
       <div class="logo-title">Porra Tullidos</div>
-      <div class="logo-sub">Mundial 2026 · USA · Canadá · México · T1</div>
+      <div class="logo-sub">Mundial 2026 · USA · Canadá · México · T2</div>
     </div>
   </div>
   <nav class="nav">
@@ -714,8 +714,8 @@ async function renderRanking(){
 
   const body=document.getElementById('ranking-body');
   if(!ranking.length){body.innerHTML='<div style="text-align:center;color:var(--gray);padding:2rem;">¡Sé el primero en registrarte!</div>';return;}
-  body.innerHTML=`<div style="overflow-x:auto"><table class="rank-table" style="min-width:480px"><thead><tr>
-    <th>#</th><th>Nombre</th><th>Grupos</th><th>Fases</th><th>Extras</th><th style="text-align:right">Total</th>
+  body.innerHTML=`<div style="overflow-x:auto"><table class="rank-table" style="min-width:340px"><thead><tr>
+    <th>#</th><th>Nombre</th><th style="text-align:center">Gr</th><th style="text-align:center">Fas</th><th style="text-align:center">Ext</th><th style="text-align:right">Total</th>
   </tr></thead><tbody>${ranking.map((p,i)=>{
     const cls=i===0?'g':i===1?'s':i===2?'b':'';
     const fases=(p.bd.r32||0)+(p.bd.octavos||0)+(p.bd.cuartos||0)+(p.bd.semis||0)+(p.bd.finalistas||0);
@@ -723,10 +723,10 @@ async function renderRanking(){
     return `<tr onclick="showDetail('${p.name}')">
       <td class="rk-pos ${cls}">${i+1}</td>
       <td><div class="rk-name">${p.name}</div><div class="bar-bg"><div class="bar" style="width:${Math.round((p.total/Math.max(max,1))*100)}%"></div></div></td>
-      <td><span class="badge b-blue">${p.bd.grupos||0}</span></td>
-      <td><span class="badge b-blue">${fases}</span></td>
-      <td><span class="badge b-gold">${extras}</span></td>
-      <td class="rk-pts">${p.total}</td>
+      <td style="text-align:center"><span class="badge b-blue">${p.bd.grupos||0}</span></td>
+      <td style="text-align:center"><span class="badge b-blue">${fases}</span></td>
+      <td style="text-align:center"><span class="badge b-gold">${extras}</span></td>
+      <td class="rk-pts" style="text-align:right;font-size:1.05rem;color:var(--gold);font-weight:700">${p.total}</td>
     </tr>`;
   }).join('')}</tbody></table></div>`;
 }
@@ -751,6 +751,30 @@ window.showDetail=async function(name){
       <span style="color:${pts>0?'var(--green)':'var(--gray)'};font-weight:600">${pts>0?'+'+pts:'—'}</span>
     </div>`;
   });
+  // Aciertos de equipos clasificados por fase
+  const norm=s=>(s||'').trim().toLowerCase();
+  const faseRow=(label,realArr,predArr,pts)=>{
+    if(!realArr||!realArr.length) return '';
+    const reales=realArr.map(norm);
+    const items=(predArr||[]).map(t=>{
+      const ok=reales.includes(norm(t));
+      return `<span style="display:inline-block;margin:.12rem;padding:.16rem .5rem;border-radius:4px;font-size:.74rem;background:${ok?'rgba(46,204,113,.16)':'rgba(255,255,255,.04)'};color:${ok?'var(--green)':'var(--gray)'};border:1px solid ${ok?'rgba(46,204,113,.3)':'rgba(255,255,255,.06)'}">${ok?'\u2713 ':''}${t}</span>`;
+    }).join('');
+    const aciertos=(predArr||[]).filter(t=>reales.includes(norm(t))).length;
+    return `<div style="margin-bottom:.7rem"><div style="font-size:.76rem;font-weight:600;color:var(--gold);margin-bottom:.25rem">${label} \u2014 ${aciertos} acierto${aciertos===1?'':'s'} (${aciertos*pts} pts)</div><div>${items||'<span style="color:var(--gray);font-size:.74rem">Sin pron\u00f3stico</span>'}</div></div>`;
+  };
+  const r32pred=p.r32list||[];
+  const octPred=(p.classified&&p.classified.octavos)||[];
+  const cuaPred=(p.classified&&p.classified.cuartos)||[];
+  const semPred=(p.classified&&p.classified.semis)||[];
+  const finPred=(p.classified&&p.classified.finalistas)||[];
+  const fasesHtml=
+    faseRow('16avos (32 equipos)',classified.r32,r32pred,10)+
+    faseRow('Octavos',classified.octavos,octPred,15)+
+    faseRow('Cuartos',classified.cuartos,cuaPred,20)+
+    faseRow('Semifinales',classified.semis,semPred,25)+
+    faseRow('Finalistas',classified.finalistas,finPred,30);
+
   openModal(`<h3>${name}</h3>
     <div class="g4" style="margin-bottom:1rem;">
       <div class="card2" style="text-align:center"><div class="stat-num">${score.total}</div><div class="stat-lbl">Total</div></div>
@@ -762,6 +786,8 @@ window.showDetail=async function(name){
       <strong style="color:var(--gold)">Campeón:</strong> ${p.campeon||'—'} &nbsp;
       <strong style="color:var(--gold)">Goleador:</strong> ${p.goleador||'—'}
     </div>
+    ${fasesHtml?`<div style="margin-bottom:.8rem"><div style="font-size:.82rem;font-weight:700;color:var(--white);margin-bottom:.4rem;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:.3rem">🏆 Equipos clasificados acertados</div>${fasesHtml}</div>`:''}
+    <div style="font-size:.82rem;font-weight:700;color:var(--white);margin-bottom:.4rem;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:.3rem">⚽ Partidos de grupo</div>
     <div style="max-height:300px;overflow-y:auto;">${rows||'<div style="color:var(--gray);font-size:.82rem">Sin pronósticos guardados</div>'}</div>
     <div style="display:flex;justify-content:flex-end;margin-top:.85rem"><button class="btn btn-ghost btn-sm" onclick="closeModal()">Cerrar</button></div>`);
 };
